@@ -1,0 +1,32 @@
+{
+  "name": "document-statement-orm",
+  "version": "1.0.0",
+  "description": "Document Statement System - ORM Implementation with Prisma",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:pull": "prisma db pull",
+    "db:studio": "prisma studio",
+    "db:seed": "node src/seed.js",
+    "test:crud": "node src/crud-demo.js"
+  },
+  "keywords": [
+    "orm",
+    "prisma",
+    "postgresql",
+    "crud"
+  ],
+  "author": "CMSC 5613 Student",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^5.9.1",
+    "dotenv": "^16.4.1"
+  },
+  "devDependencies": {
+    "prisma": "^5.9.1"
+  }
+}

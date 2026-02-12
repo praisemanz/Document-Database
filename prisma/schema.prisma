@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model ACCOUNT {
+  account_id     BigInt     @id @default(autoincrement())
+  account_number String     @unique(map: "account_number") @db.VarChar(50)
+  account_type   String     @db.VarChar(50)
+  is_active      Int        @default(1) @db.TinyInt
+  customer_id    BigInt
+  client_id      BigInt
+  STATEMENT      STATEMENT?
+}
+
+model ADMIN {
+  admin_id      BigInt      @id @default(autoincrement())
+  user_id       BigInt      @unique(map: "user_id")
+  client_id     BigInt      @unique(map: "client_id")
+  role          String?     @db.VarChar(255)
+  assigned_date DateTime?   @default(now()) @db.Timestamp(0)
+  USER          USER        @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "FKADMIN520845")
+  REPORT        REPORT[]
+  STATEMENT     STATEMENT[]
+}
+
+model AUDIT_LOG {
+  log_id      BigInt   @id @default(autoincrement())
+  action      String   @db.VarChar(100)
+  entity_type String   @db.VarChar(50)
+  entity_id   Int
+  timestamp   DateTime @default(now()) @db.Timestamp(0)
+  ip_address  String   @db.VarChar(45)
+  details     String   @db.Text
+  user_id     BigInt
+  admin_id    BigInt
+  user_agent  String?  @db.VarChar(500)
+}
+
+model CLIENT {
+  client_id       BigInt @id @default(autoincrement())
+  client_name     String @unique(map: "client_name") @db.VarChar(100)
+  contact_phone   String @db.VarChar(100)
+  contact_email   String @db.VarChar(20)
+  number_of_users Int
+  admin_id        Int?
+}
+
+model CUSTOMER {
+  customer_id         BigInt   @id @default(autoincrement())
+  ssn                 String   @unique(map: "ssn") @db.VarChar(15)
+  dob                 DateTime @db.Date
+  delivery_preference String   @db.VarChar(50)
+  user_id             BigInt
+  USER                USER     @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "FKCUSTOMER151504")
+
+  @@index([user_id], map: "FKCUSTOMER151504")
+}
+
+model DOCUMENT_METADATA {
+  metadata_id      BigInt    @id @default(autoincrement())
+  upload_date      DateTime  @db.Date
+  document_type    String    @db.VarChar(10)
+  retention_period Int
+  statement_id     BigInt
+  STATEMENT        STATEMENT @relation(fields: [statement_id], references: [statement_id], onDelete: Cascade, onUpdate: Restrict, map: "FKDOCUMENT_M303312")
+
+  @@index([statement_id], map: "FKDOCUMENT_M303312")
+}
+
+model NOTIFICATION {
+  notification_id   BigInt   @id @default(autoincrement())
+  subject           String   @db.VarChar(255)
+  message           String   @db.Text
+  sent_date         DateTime @default(now()) @db.Timestamp(0)
+  is_read           Int      @db.TinyInt
+  priority          String   @db.VarChar(20)
+  user_id           BigInt
+  notification_type String?  @db.VarChar(50)
+  related_entity_id Int?
+}
+
+model REPORT {
+  report_id      BigInt   @id @default(autoincrement())
+  type           String   @db.VarChar(255)
+  generated_date DateTime @db.Date
+  admin_id       BigInt
+  report_name    String?  @db.VarChar(255)
+  file_path      String?  @db.VarChar(500)
+  status         String?  @db.VarChar(50)
+  ADMIN          ADMIN    @relation(fields: [admin_id], references: [admin_id], onUpdate: Restrict, map: "FKREPORT675410")
+
+  @@index([admin_id], map: "FKREPORT675410")
+}
+
+model STATEMENT {
+  statement_id         BigInt              @id @default(autoincrement())
+  statement_period     String              @db.VarChar(20)
+  file_size            BigInt
+  page_count           Int
+  document_type        String              @db.VarChar(50)
+  retention_days       Int                 @default(90)
+  pdf_path             String              @db.VarChar(500)
+  account_id           BigInt              @unique(map: "account_id")
+  document_metadata_id Int?
+  uploaded_by_admin_id BigInt
+  statement_year       Int?
+  upload_date          DateTime?           @default(now()) @db.Timestamp(0)
+  posted_date          DateTime            @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  expiration_date      DateTime?           @db.Date
+  is_archived          Boolean?            @default(false)
+  checksum             String              @db.VarChar(64)
+  DOCUMENT_METADATA    DOCUMENT_METADATA[]
+  ACCOUNT              ACCOUNT             @relation(fields: [account_id], references: [account_id], onDelete: Cascade, onUpdate: Restrict, map: "FKSTATEMENT557086")
+  ADMIN                ADMIN               @relation(fields: [uploaded_by_admin_id], references: [admin_id], onUpdate: Restrict, map: "FKSTATEMENT751767")
+
+  @@index([uploaded_by_admin_id], map: "FKSTATEMENT751767")
+}
+
+model USER {
+  user_id           BigInt     @id @default(autoincrement())
+  username          String     @unique(map: "username") @db.VarChar(50)
+  password_hash     String     @db.VarChar(255)
+  email             String     @unique(map: "email") @db.VarChar(100)
+  first_name        String     @db.VarChar(50)
+  last_name         String     @db.VarChar(50)
+  phone_number      String     @db.VarChar(20)
+  is_active         Boolean    @default(true)
+  registration_date DateTime   @default(now()) @db.Timestamp(0)
+  last_login_date   DateTime   @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  ADMIN             ADMIN?
+  CUSTOMER          CUSTOMER[]
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model USER_ACCOUNT {
+  user_id     BigInt
+  account_id  BigInt
+  is_primary  Int?      @db.TinyInt
+  linked_date DateTime? @default(now()) @db.Timestamp(0)
+
+  @@ignore
+}
