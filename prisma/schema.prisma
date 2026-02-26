@@ -18,14 +18,15 @@ model ACCOUNT {
 }
 
 model ADMIN {
-  admin_id      BigInt      @id @default(autoincrement())
-  user_id       BigInt      @unique(map: "user_id")
-  client_id     BigInt      @unique(map: "client_id")
-  role          String?     @db.VarChar(255)
-  assigned_date DateTime?   @default(now()) @db.Timestamp(0)
-  USER          USER        @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "FKADMIN520845")
-  REPORT        REPORT[]
-  STATEMENT     STATEMENT[]
+  admin_id               BigInt                 @id @default(autoincrement())
+  user_id                BigInt                 @unique(map: "user_id")
+  client_id              BigInt                 @unique(map: "client_id")
+  role                   String?                @db.VarChar(255)
+  assigned_date          DateTime?              @default(now()) @db.Timestamp(0)
+  USER                   USER                   @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "FKADMIN520845")
+  REPORT                 REPORT[]
+  STATEMENT              STATEMENT[]
+  IMPERSONATION_SESSION  IMPERSONATION_SESSION[]
 }
 
 model AUDIT_LOG {
@@ -41,6 +42,23 @@ model AUDIT_LOG {
   user_agent  String?  @db.VarChar(500)
 }
 
+/// Impersonation sessions: admin impersonates customer. session_id can be passed in AUDIT_LOG.details.
+model IMPERSONATION_SESSION {
+  session_id   BigInt    @id @default(autoincrement())
+  admin_id     BigInt
+  customer_id  BigInt
+  started_at   DateTime  @default(now()) @db.Timestamp(0)
+  ended_at     DateTime? @db.Timestamp(0)
+  ip_address   String    @db.VarChar(45)
+  reason       String?   @db.VarChar(255)
+  is_active    Int       @default(1) @db.TinyInt
+  ADMIN        ADMIN     @relation(fields: [admin_id], references: [admin_id], onDelete: Cascade, onUpdate: Restrict, map: "FK_IMPSESS_ADMIN")
+  CUSTOMER     CUSTOMER  @relation(fields: [customer_id], references: [customer_id], onDelete: Cascade, onUpdate: Restrict, map: "FK_IMPSESS_CUSTOMER")
+
+  @@index([admin_id], map: "FK_IMPSESS_ADMIN")
+  @@index([customer_id], map: "FK_IMPSESS_CUSTOMER")
+}
+
 model CLIENT {
   client_id       BigInt @id @default(autoincrement())
   client_name     String @unique(map: "client_name") @db.VarChar(100)
@@ -51,12 +69,13 @@ model CLIENT {
 }
 
 model CUSTOMER {
-  customer_id         BigInt   @id @default(autoincrement())
-  ssn                 String   @unique(map: "ssn") @db.VarChar(15)
-  dob                 DateTime @db.Date
-  delivery_preference String   @db.VarChar(50)
-  user_id             BigInt
-  USER                USER     @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "FKCUSTOMER151504")
+  customer_id            BigInt                   @id @default(autoincrement())
+  ssn                    String                   @unique(map: "ssn") @db.VarChar(15)
+  dob                    DateTime                 @db.Date
+  delivery_preference    String                   @db.VarChar(50)
+  user_id                BigInt
+  USER                   USER                     @relation(fields: [user_id], references: [user_id], onUpdate: Restrict, map: "FKCUSTOMER151504")
+  IMPERSONATION_SESSION  IMPERSONATION_SESSION[]
 
   @@index([user_id], map: "FKCUSTOMER151504")
 }
