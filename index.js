@@ -5,6 +5,7 @@ async function main() {
     console.log("=== FULL DATABASE CRUD START ===");
 
     // CLEANUP FIRST (order matters)
+    await prisma.IMPERSONATION_SESSION.deleteMany();
     await prisma.AUDIT_LOG.deleteMany();
     await prisma.REPORT.deleteMany();
     await prisma.DOCUMENT_METADATA.deleteMany();
@@ -60,6 +61,37 @@ async function main() {
         }
     });
     console.log("ADMIN CREATED:", admin);
+
+    // IMPERSONATION_SESSION — sample sessions (admin impersonating customer)
+    const imp1 = await prisma.IMPERSONATION_SESSION.create({
+        data: {
+            admin_id: admin.admin_id,
+            customer_id: customer.customer_id,
+            ip_address: "192.168.1.10",
+            reason: "Customer requested help with delivery preference",
+            is_active: 0,
+            ended_at: new Date()
+        }
+    });
+    const imp2 = await prisma.IMPERSONATION_SESSION.create({
+        data: {
+            admin_id: admin.admin_id,
+            customer_id: customer.customer_id,
+            ip_address: "10.0.0.5",
+            reason: "Support ticket #4421",
+            is_active: 1
+        }
+    });
+    const imp3 = await prisma.IMPERSONATION_SESSION.create({
+        data: {
+            admin_id: admin.admin_id,
+            customer_id: customer.customer_id,
+            ip_address: "172.16.0.1",
+            reason: null,
+            is_active: 1
+        }
+    });
+    console.log("IMPERSONATION_SESSION CREATED:", { imp1, imp2, imp3 });
 
     // ACCOUNT
     const account = await prisma.ACCOUNT.create({
